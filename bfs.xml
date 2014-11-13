@@ -102,7 +102,7 @@ int getComputedTime() {
     return task.computed_time + r;
 }</declaration>
 		<location id="id0" x="-153" y="-51">
-			<name x="-163" y="-85">added</name>
+			<name x="-163" y="-85">Added</name>
 		</location>
 		<location id="id1" x="-306" y="119">
 			<name x="-416" y="110">Completed</name>
