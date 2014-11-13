@@ -136,7 +136,6 @@ int getComputedTime() {
 			<target ref="id1"/>
 			<label kind="guard" x="-467" y="263">r &lt; RR_INTERVAL</label>
 			<label kind="assignment" x="-467" y="280">r++,
-t++,
 idle++</label>
 			<nail x="-365" y="255"/>
 			<nail x="-442" y="255"/>
@@ -147,8 +146,7 @@ idle++</label>
 			<label kind="guard" x="-119" y="263">r &lt; RR_INTERVAL &amp;&amp;
 getComputedTime() != 
 task.required_computation_time</label>
-			<label kind="assignment" x="-119" y="340">r++,
-t++</label>
+			<label kind="assignment" x="-119" y="340">r++</label>
 			<nail x="-59" y="255"/>
 			<nail x="-102" y="255"/>
 		</transition>
