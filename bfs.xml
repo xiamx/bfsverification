@@ -101,8 +101,8 @@ bool isNextToRun() {
 int getComputedTime() {
     return task.computed_time + r;
 }</declaration>
-		<location id="id0" x="-153" y="-51">
-			<name x="-163" y="-85">Added</name>
+		<location id="id0" x="-34" y="-68">
+			<name x="-44" y="-102">Added</name>
 		</location>
 		<location id="id1" x="-306" y="119">
 			<name x="-416" y="110">Completed</name>
@@ -114,8 +114,8 @@ int getComputedTime() {
 			<label kind="invariant" x="-34" y="153">r &lt;= RR_INTERVAL</label>
 			<committed/>
 		</location>
-		<location id="id3" x="-34" y="-51">
-			<name x="-8" y="-59">Runnable</name>
+		<location id="id3" x="-127" y="17">
+			<name x="-101" y="9">Runnable</name>
 		</location>
 		<location id="id4" x="-34" y="-170">
 			<name x="-44" y="-204">Idle</name>
@@ -124,14 +124,14 @@ int getComputedTime() {
 		<transition>
 			<source ref="id4"/>
 			<target ref="id0"/>
-			<label kind="guard" x="-135" y="-144">initialized == true</label>
-			<label kind="assignment" x="-119" y="-136">add()</label>
+			<label kind="guard" x="-153" y="-144">initialized == true</label>
+			<label kind="assignment" x="-153" y="-119">add()</label>
 		</transition>
 		<transition>
 			<source ref="id0"/>
 			<target ref="id3"/>
-			<label kind="guard" x="-135" y="-85">isNextToRun()</label>
-			<label kind="synchronisation" x="-135" y="-68">runnable!</label>
+			<label kind="guard" x="-144" y="-68">isNextToRun()</label>
+			<label kind="synchronisation" x="-144" y="-51">runnable!</label>
 		</transition>
 		<transition>
 			<source ref="id1"/>
@@ -271,7 +271,7 @@ gantt {
 			</comment>
 		</query>
 		<query>
-			<formula>A[] not deadlock 
+			<formula>A[] not deadlock
 			</formula>
 			<comment>System will not deadlock
 			</comment>
