@@ -107,10 +107,12 @@ int getComputedTime() {
 		<location id="id1" x="-306" y="119">
 			<name x="-416" y="110">Completed</name>
 			<label kind="invariant" x="-316" y="136">r &lt;= RR_INTERVAL</label>
+			<committed/>
 		</location>
 		<location id="id2" x="-34" y="119">
 			<name x="-34" y="136">Running</name>
 			<label kind="invariant" x="-34" y="153">r &lt;= RR_INTERVAL</label>
+			<committed/>
 		</location>
 		<location id="id3" x="-34" y="-51">
 			<name x="-8" y="-59">Runnable</name>
@@ -197,12 +199,14 @@ void updateQueues () {
 		</location>
 		<location id="id6" x="51" y="-238">
 			<name x="41" y="-272">schedulable</name>
+			<committed/>
 		</location>
 		<location id="id7" x="-187" y="8">
 			<name x="-240" y="25">runQueueEmpty</name>
 		</location>
 		<location id="id8" x="-306" y="-238">
 			<name x="-316" y="-272">idle</name>
+			<committed/>
 		</location>
 		<location id="id9" x="-408" y="-238">
 			<name x="-418" y="-272">Init</name>
