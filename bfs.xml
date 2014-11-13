@@ -255,6 +255,18 @@ gantt {
 </system>
 	<queries>
 		<query>
+			<formula>Process(0).Added --&gt; Process(0).Completed
+			</formula>
+			<comment>
+			</comment>
+		</query>
+		<query>
+			<formula>Process(1).Added --&gt; Process(1).Completed
+			</formula>
+			<comment>Process 1 added to scheduler eventually completes
+			</comment>
+		</query>
+		<query>
 			<formula>A[] not deadlock 
 			</formula>
 			<comment>System will not deadlock
