@@ -254,5 +254,11 @@ gantt {
 }
 </system>
 	<queries>
+		<query>
+			<formula>A[] not deadlock 
+			</formula>
+			<comment>System will not deadlock
+			</comment>
+		</query>
 	</queries>
 </nta>
