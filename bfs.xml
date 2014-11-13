@@ -3,8 +3,10 @@
 <nta>
 	<declaration>// Place global declarations here.
 const int N = 2; //number of tasks
-typedef int [0, N - 1] pid_t;
+typedef int [-1, N - 1] pid_t;
 const int RR_INTERVAL = 5;
+int t = 0;
+bool initialized = false;
 
 chan runnable, run, timeout, done;
 
@@ -12,7 +14,7 @@ chan runnable, run, timeout, done;
  * for simulation purposes, we set it to be small.
  */
 const int static_rq_count = 1;
-typedef int [0, static_rq_count] static_rq_n;
+typedef int [0, static_rq_count - 1] static_rq_n;
 const int static_rq_size = N;
 
 // nice level
@@ -36,73 +38,124 @@ task_t static_rq[static_rq_n][static_rq_size];
 // record the lenght of each static_rq
 int static_rq_len[static_rq_n];
 
+// normal runqueue
+task_t normal_rq[N];
+// record the length of the normal runqueue
+int normal_rq_len[N];
+
 const task_t tasks[N] = {
-    { 0, false, 0, 1, 0,  0,  false, 0}, // a non cpu intensive task
-    { 1, false, 0, 20, 0, 0, false, 0} // a cpu intensive task
+    { 0, false, 0, 1, 0,  0,  true, 0}, // a non cpu intensive task
+    { 1, false, 0, 20, 0, 0, true, 0} // a cpu intensive task
+    //{ 2, false, 0, 32767, 0,  0,  true, 0} // a realtime task that can starve the system
 };
 
 void initialize() {
     for (i: static_rq_n) static_rq_len[i] = 0;
+    for (i: static_rq_n) for (j: int[0,N - 1]) static_rq[i][j].pid = -1;
+    initialized = true;
 }
 </declaration>
 	<template>
 		<name x="5" y="5">Process</name>
-		<parameter>const pid_t p</parameter>
+		<parameter>const int[0, N-1] p</parameter>
 		<declaration>// Place local declarations here.
 
 int r, idle;
-task_t task ;
+task_t task = tasks[p];
 
 void add (){
-    task = tasks[p];
+    // is it a realtime ?
     if (task.realtime) {
         int rqlen = static_rq_len[task.realtime_priority];
         static_rq[task.realtime_priority][rqlen] = task;
         static_rq_len[task.realtime_priority]++;
+    } else {
+        // then this must be a sched_normal
+
+    }
+}
+
+void updateRunQueues() {
+    if (task.realtime) {
+        // remove head of the corresponding static_runqueue
+        pid_t i;
+        int rqlen = static_rq_len[task.realtime_priority];
+        for (i = 0; i&lt; rqlen - 1; i++) {
+            static_rq[task.realtime_priority][i] = static_rq[task.realtime_priority][i + 1];
+        }
+        static_rq[task.realtime_priority][rqlen - 1].pid = -1;
+        //decrease static_rq_len by 1
+        static_rq_len[task.realtime_priority]--;
+    }
+}
+
+bool isNextToRun() {
+    if (task.realtime) {
+        int rqlen = static_rq_len[task.realtime_priority];
+        return static_rq[task.realtime_priority][0].pid == task.pid;
+    } else {
+        return false;
     }
 }
 
 int getComputedTime() {
     return task.computed_time + r;
 }</declaration>
-		<location id="id0" x="-306" y="119">
+		<location id="id0" x="-153" y="-51">
+			<name x="-163" y="-85">added</name>
+		</location>
+		<location id="id1" x="-306" y="119">
 			<name x="-416" y="110">Completed</name>
 			<label kind="invariant" x="-316" y="136">r &lt;= RR_INTERVAL</label>
 		</location>
-		<location id="id1" x="-34" y="119">
+		<location id="id2" x="-34" y="119">
 			<name x="-34" y="136">Running</name>
 			<label kind="invariant" x="-34" y="153">r &lt;= RR_INTERVAL</label>
 		</location>
-		<location id="id2" x="-34" y="-51">
+		<location id="id3" x="-34" y="-51">
 			<name x="-8" y="-59">Runnable</name>
 		</location>
-		<location id="id3" x="-34" y="-170">
+		<location id="id4" x="-34" y="-170">
 			<name x="-44" y="-204">Idle</name>
 		</location>
-		<init ref="id3"/>
+		<init ref="id4"/>
+		<transition>
+			<source ref="id4"/>
+			<target ref="id0"/>
+			<label kind="guard" x="-135" y="-144">initialized == true</label>
+			<label kind="assignment" x="-119" y="-136">add()</label>
+		</transition>
 		<transition>
 			<source ref="id0"/>
-			<target ref="id0"/>
+			<target ref="id3"/>
+			<label kind="guard" x="-135" y="-85">isNextToRun()</label>
+			<label kind="synchronisation" x="-135" y="-68">runnable!</label>
+		</transition>
+		<transition>
+			<source ref="id1"/>
+			<target ref="id1"/>
 			<label kind="guard" x="-467" y="263">r &lt; RR_INTERVAL</label>
 			<label kind="assignment" x="-467" y="280">r++,
+t++,
 idle++</label>
 			<nail x="-365" y="255"/>
 			<nail x="-442" y="255"/>
 		</transition>
 		<transition>
-			<source ref="id1"/>
-			<target ref="id1"/>
+			<source ref="id2"/>
+			<target ref="id2"/>
 			<label kind="guard" x="-119" y="263">r &lt; RR_INTERVAL &amp;&amp;
 getComputedTime() != 
 task.required_computation_time</label>
-			<label kind="assignment" x="-119" y="340">r++</label>
+			<label kind="assignment" x="-119" y="340">r++,
+t++</label>
 			<nail x="-59" y="255"/>
 			<nail x="-102" y="255"/>
 		</transition>
 		<transition>
-			<source ref="id1"/>
-			<target ref="id3"/>
-			<label kind="guard" x="177" y="-8">r == RR_INTERVAL</label>
+			<source ref="id2"/>
+			<target ref="id4"/>
+			<label kind="guard" x="178" y="-76">r == RR_INTERVAL</label>
 			<label kind="synchronisation" x="178" y="8">timeout!</label>
 			<label kind="assignment" x="178" y="25">task.computed_time = r, 
 r = 0</label>
@@ -110,102 +163,94 @@ r = 0</label>
 			<nail x="169" y="-170"/>
 		</transition>
 		<transition>
-			<source ref="id0"/>
-			<target ref="id3"/>
+			<source ref="id1"/>
+			<target ref="id4"/>
 			<label kind="guard" x="-289" y="-195">r == RR_INTERVAL</label>
 			<label kind="synchronisation" x="-288" y="-187">done!</label>
-			<label kind="assignment" x="-288" y="-170">r = 0,
+			<label kind="assignment" x="-288" y="-170">task.sleep_time = idle,
+r = 0,
 idle = 0</label>
 			<nail x="-306" y="-170"/>
 		</transition>
 		<transition>
-			<source ref="id1"/>
-			<target ref="id0"/>
+			<source ref="id2"/>
+			<target ref="id1"/>
 			<label kind="guard" x="-272" y="76">getComputedTime() == 
 task.required_computation_time</label>
 		</transition>
 		<transition>
-			<source ref="id2"/>
-			<target ref="id1"/>
-			<label kind="synchronisation" x="-25" y="25">run?</label>
-		</transition>
-		<transition>
 			<source ref="id3"/>
 			<target ref="id2"/>
-			<label kind="synchronisation" x="-17" y="-153">runnable!</label>
-			<label kind="assignment" x="-17" y="-136">add()</label>
+			<label kind="synchronisation" x="-25" y="25">run?</label>
+			<label kind="assignment" x="-25" y="42">updateRunQueues()</label>
 		</transition>
 	</template>
 	<template>
 		<name>BFS</name>
-		<declaration>
-
-const int SCHED_ISO_rq_size = N;
-int SCHED_ISO_rq[SCHED_ISO_rq_size];
-
-bool isRunQueuesEmpty() {
+		<declaration>bool isRunQueuesEmpty() {
     return forall (i: static_rq_n) static_rq_len[i] == 0;
 }
 
 void updateQueues () {
 
 }</declaration>
-		<location id="id4" x="-144" y="-442">
+		<location id="id5" x="-144" y="-442">
 			<name x="-154" y="-476">scheduled</name>
 		</location>
-		<location id="id5" x="51" y="-238">
+		<location id="id6" x="51" y="-238">
 			<name x="41" y="-272">schedulable</name>
 		</location>
-		<location id="id6" x="-187" y="8">
+		<location id="id7" x="-187" y="8">
 			<name x="-240" y="25">runQueueEmpty</name>
 		</location>
-		<location id="id7" x="-306" y="-238">
+		<location id="id8" x="-306" y="-238">
 			<name x="-316" y="-272">idle</name>
 		</location>
-		<location id="id8" x="-408" y="-238">
+		<location id="id9" x="-408" y="-238">
 			<name x="-418" y="-272">Init</name>
 		</location>
-		<init ref="id8"/>
+		<init ref="id9"/>
 		<transition>
-			<source ref="id4"/>
-			<target ref="id7"/>
+			<source ref="id5"/>
+			<target ref="id8"/>
 			<label kind="synchronisation" x="-296" y="-459">done?</label>
 			<nail x="-314" y="-442"/>
 		</transition>
 		<transition>
-			<source ref="id4"/>
-			<target ref="id7"/>
-			<label kind="synchronisation" x="-221" y="-331">timeout?</label>
-		</transition>
-		<transition>
 			<source ref="id5"/>
-			<target ref="id4"/>
-			<label kind="synchronisation" x="-59" y="-382">run!</label>
+			<target ref="id8"/>
+			<label kind="synchronisation" x="-221" y="-331">timeout?</label>
 		</transition>
 		<transition>
 			<source ref="id6"/>
 			<target ref="id5"/>
-			<label kind="synchronisation" x="-85" y="-102">runnable?</label>
-		</transition>
-		<transition>
-			<source ref="id7"/>
-			<target ref="id5"/>
-			<label kind="guard" x="-221" y="-238">!isRunQueuesEmpty()</label>
+			<label kind="synchronisation" x="-59" y="-382">run!</label>
 		</transition>
 		<transition>
 			<source ref="id7"/>
 			<target ref="id6"/>
-			<label kind="guard" x="-408" y="-161">isRunQueuesEmpty()</label>
+			<label kind="synchronisation" x="-85" y="-102">runnable?</label>
+		</transition>
+		<transition>
+			<source ref="id8"/>
+			<target ref="id6"/>
+			<label kind="guard" x="-221" y="-238">!isRunQueuesEmpty()</label>
+			<label kind="synchronisation" x="-288" y="-255">runnable?</label>
 		</transition>
 		<transition>
 			<source ref="id8"/>
 			<target ref="id7"/>
+			<label kind="guard" x="-408" y="-161">isRunQueuesEmpty()</label>
+		</transition>
+		<transition>
+			<source ref="id9"/>
+			<target ref="id8"/>
 			<label kind="assignment" x="-390" y="-238">initialize()</label>
 		</transition>
 	</template>
 	<system>system BFS, Process;
 gantt {
-  Task(i : pid_t): Process(i).Runnable -&gt; 1,
+  Task(i : int[0, N-1]): Process(i).Runnable -&gt; 1,
                    Process(i).Running -&gt; 2,
                    Process(i).Completed -&gt; 0;
 }
