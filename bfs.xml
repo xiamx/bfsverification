@@ -104,6 +104,18 @@ bool isNextToRun() {
         return false;
     }
 }
+
+// Given a nice level. Get the corresponding RR_interval
+int getRRInterval(int[-1,1] nice) {
+    if (nice == -1) {
+        return RR_INTERVAL/2;
+    } else if (nice == 0) {
+        return RR_INTERVAL;
+    } else {
+        return RR_INTERVAL*2;
+    }
+}
+
 </declaration>
 		<location id="id0" x="-34" y="-68">
 			<name x="-44" y="-102">Added</name>
