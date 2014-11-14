@@ -4,7 +4,7 @@
 	<declaration>// Place global declarations here.
 const int N = 2; //number of tasks
 typedef int [-1, N - 1] pid_t;
-const int RR_INTERVAL = 5;
+const int RR_INTERVAL = 4;
 int t = 0;
 bool initialized = false;
 
