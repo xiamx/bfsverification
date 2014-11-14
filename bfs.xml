@@ -18,7 +18,7 @@ typedef int [0, static_rq_count - 1] static_rq_n;
 const int static_rq_size = N;
 
 // nice level
-typedef int [-20, 19] nice_t;
+typedef int [-1, 1] nice_t;
 typedef int [0, static_rq_count] realtime_t;
 
 
