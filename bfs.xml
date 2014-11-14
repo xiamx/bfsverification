@@ -2,10 +2,11 @@
 <!DOCTYPE nta PUBLIC '-//Uppaal Team//DTD Flat System 1.1//EN' 'http://www.it.uu.se/research/group/darts/uppaal/flat-1_2.dtd'>
 <nta>
 	<declaration>// Place global declarations here.
+bool hasRunning = false;
 const int N = 2; //number of tasks
 typedef int [-1, N - 1] pid_t;
 const int RR_INTERVAL = 4;
-int t = 0;
+clock t;
 bool initialized = false;
 
 chan runnable, run, timeout, done;
@@ -27,8 +28,6 @@ typedef struct {
     bool ready;
     nice_t nice;
     int required_computation_time;
-    int computed_time;
-    int sleep_time;
     bool realtime;
     realtime_t realtime_priority;
     bool completed;
@@ -45,30 +44,15 @@ task_t normal_rq[N];
 int normal_rq_len[N];
 
 const task_t tasks[N] = {
-    { 0, false, 0, 1, 0,  0,  true, 0, false}, // a non cpu intensive task
-    { 1, false, 0, 20, 0, 0, true, 0, false} // a cpu intensive task
+    { 0, false, 0, 1, true, 0, false}, // a non cpu intensive task
+    { 1, false, 0, 20, true, 0, false} // a cpu intensive task
     //{ 2, false, 0, 32767, 0,  0,  true, 0} // a realtime task that can starve the system
 };
 
-void initialize() {
-    for (i: static_rq_n) static_rq_len[i] = 0;
-    for (i: static_rq_n) for (j: int[0,N - 1]) static_rq[i][j].pid = -1;
-    initialized = true;
-}
-</declaration>
-	<template>
-		<name x="5" y="5">Process</name>
-		<parameter>const int[0, N-1] p</parameter>
-		<declaration>// Place local declarations here.
 
-int r, idle;
-task_t task = tasks[p];
-
-void add (){
+void add (task_t task){
     if (task.completed) {
         // if completed, reset
-        task.computed_time = 0;
-        task.sleep_time = 0;
         task.completed = false;
     }
     // is it a realtime ?
@@ -81,6 +65,19 @@ void add (){
 
     }
 }
+
+void initialize() {
+    for (i: static_rq_n) static_rq_len[i] = 0;
+    for (i: static_rq_n) for (j: int[0,N - 1]) static_rq[i][j].pid = -1;
+    for (i: int[0, N-1]) add(tasks[i]);
+    initialized = true;
+}
+</declaration>
+	<template>
+		<name x="5" y="5">Process</name>
+		<parameter>const int[0, N-1] p</parameter>
+		<declaration>// Place local declarations here.
+task_t task = tasks[p];
 
 void updateRunQueues() {
     if (task.realtime) {
@@ -120,87 +117,45 @@ int getRRInterval(int[-1,1] nice) {
 		<location id="id0" x="-34" y="-68">
 			<name x="-44" y="-102">Added</name>
 		</location>
-		<location id="id1" x="-306" y="119">
-			<name x="-416" y="110">Completed</name>
-			<label kind="invariant" x="-316" y="136">r &lt;= RR_INTERVAL</label>
-			<committed/>
+		<location id="id1" x="-42" y="119">
+			<name x="-42" y="136">Running</name>
 		</location>
-		<location id="id2" x="-34" y="119">
-			<name x="-34" y="136">Running</name>
-			<label kind="invariant" x="-34" y="153">r &lt;= RR_INTERVAL</label>
-			<committed/>
-		</location>
-		<location id="id3" x="-127" y="17">
+		<location id="id2" x="-127" y="17">
 			<name x="-101" y="9">Runnable</name>
+			<committed/>
 		</location>
-		<location id="id4" x="-34" y="-170">
+		<location id="id3" x="-34" y="-170">
 			<name x="-44" y="-204">Idle</name>
+			<committed/>
 		</location>
-		<init ref="id4"/>
+		<init ref="id0"/>
 		<transition>
-			<source ref="id4"/>
+			<source ref="id3"/>
 			<target ref="id0"/>
-			<label kind="guard" x="-153" y="-144">initialized == true</label>
-			<label kind="assignment" x="-153" y="-119">add()</label>
+			<label kind="guard" x="-127" y="-127">initialized</label>
+			<label kind="assignment" x="-17" y="-119">add(tasks[p])</label>
 		</transition>
 		<transition>
 			<source ref="id0"/>
-			<target ref="id3"/>
-			<label kind="guard" x="-144" y="-68">isNextToRun()</label>
-			<label kind="synchronisation" x="-144" y="-51">runnable!</label>
+			<target ref="id2"/>
+			<label kind="guard" x="-170" y="-76">isNextToRun() &amp;&amp;
+!hasRunning</label>
+			<label kind="synchronisation" x="-161" y="-34">runnable!</label>
 		</transition>
 		<transition>
 			<source ref="id1"/>
-			<target ref="id1"/>
-			<label kind="guard" x="-467" y="263">r &lt; RR_INTERVAL</label>
-			<label kind="assignment" x="-467" y="280">r++,
-idle++,
-task.sleep_time++</label>
-			<nail x="-365" y="255"/>
-			<nail x="-442" y="255"/>
-		</transition>
-		<transition>
-			<source ref="id2"/>
-			<target ref="id2"/>
-			<label kind="guard" x="-119" y="263">r &lt; RR_INTERVAL &amp;&amp;
-task.computed_time &lt; 
-task.required_computation_time</label>
-			<label kind="assignment" x="-119" y="340">r++,
-task.computed_time++</label>
-			<nail x="-59" y="255"/>
-			<nail x="-102" y="255"/>
-		</transition>
-		<transition>
-			<source ref="id2"/>
-			<target ref="id4"/>
-			<label kind="guard" x="178" y="-76">r == RR_INTERVAL</label>
-			<label kind="synchronisation" x="178" y="8">timeout!</label>
-			<label kind="assignment" x="178" y="25">r = 0,
-task.completed = false</label>
+			<target ref="id3"/>
+			<label kind="synchronisation" x="178" y="8">timeout?</label>
 			<nail x="169" y="119"/>
 			<nail x="169" y="-170"/>
-		</transition>
-		<transition>
-			<source ref="id1"/>
-			<target ref="id4"/>
-			<label kind="guard" x="-289" y="-204">r == RR_INTERVAL</label>
-			<label kind="synchronisation" x="-288" y="-187">done!</label>
-			<label kind="assignment" x="-288" y="-170">r = 0,
-idle = 0,
-task.completed = true</label>
-			<nail x="-306" y="-170"/>
+			<nail x="-8" y="-170"/>
 		</transition>
 		<transition>
 			<source ref="id2"/>
 			<target ref="id1"/>
-			<label kind="guard" x="-272" y="76">task.computed_time == 
-task.required_computation_time</label>
-		</transition>
-		<transition>
-			<source ref="id3"/>
-			<target ref="id2"/>
 			<label kind="synchronisation" x="-25" y="25">run?</label>
-			<label kind="assignment" x="-25" y="42">updateRunQueues()</label>
+			<label kind="assignment" x="-25" y="42">updateRunQueues(),
+hasRunning = true</label>
 		</transition>
 	</template>
 	<template>
@@ -212,59 +167,58 @@ task.required_computation_time</label>
 void updateQueues () {
 
 }</declaration>
-		<location id="id5" x="-144" y="-442">
+		<location id="id4" x="-144" y="-442">
 			<name x="-154" y="-476">scheduled</name>
+			<label kind="invariant" x="-93" y="-450">t &lt;= RR_INTERVAL</label>
 		</location>
-		<location id="id6" x="51" y="-238">
+		<location id="id5" x="51" y="-238">
 			<name x="41" y="-272">schedulable</name>
 			<committed/>
 		</location>
-		<location id="id7" x="-187" y="8">
-			<name x="-240" y="25">runQueueEmpty</name>
+		<location id="id6" x="-178" y="-17">
+			<name x="-229" y="0">runQueueEmpty</name>
 		</location>
-		<location id="id8" x="-306" y="-238">
+		<location id="id7" x="-306" y="-238">
 			<name x="-316" y="-272">idle</name>
 			<committed/>
 		</location>
-		<location id="id9" x="-408" y="-238">
+		<location id="id8" x="-408" y="-238">
 			<name x="-418" y="-272">Init</name>
+			<committed/>
 		</location>
-		<init ref="id9"/>
+		<init ref="id8"/>
 		<transition>
-			<source ref="id5"/>
-			<target ref="id8"/>
-			<label kind="synchronisation" x="-296" y="-459">done?</label>
-			<nail x="-314" y="-442"/>
+			<source ref="id4"/>
+			<target ref="id7"/>
+			<label kind="guard" x="-289" y="-374">t == RR_INTERVAL</label>
+			<label kind="synchronisation" x="-221" y="-331">timeout!</label>
+			<label kind="assignment" x="-288" y="-340">hasRunning = false</label>
 		</transition>
 		<transition>
 			<source ref="id5"/>
-			<target ref="id8"/>
-			<label kind="synchronisation" x="-221" y="-331">timeout?</label>
+			<target ref="id4"/>
+			<label kind="synchronisation" x="-59" y="-382">run!</label>
+			<label kind="assignment" x="-126" y="-340">t = 0</label>
 		</transition>
 		<transition>
 			<source ref="id6"/>
 			<target ref="id5"/>
-			<label kind="synchronisation" x="-59" y="-382">run!</label>
-		</transition>
-		<transition>
-			<source ref="id7"/>
-			<target ref="id6"/>
 			<label kind="synchronisation" x="-85" y="-102">runnable?</label>
 		</transition>
 		<transition>
-			<source ref="id8"/>
-			<target ref="id6"/>
+			<source ref="id7"/>
+			<target ref="id5"/>
 			<label kind="guard" x="-221" y="-238">!isRunQueuesEmpty()</label>
 			<label kind="synchronisation" x="-288" y="-255">runnable?</label>
 		</transition>
 		<transition>
-			<source ref="id8"/>
-			<target ref="id7"/>
+			<source ref="id7"/>
+			<target ref="id6"/>
 			<label kind="guard" x="-408" y="-161">isRunQueuesEmpty()</label>
 		</transition>
 		<transition>
-			<source ref="id9"/>
-			<target ref="id8"/>
+			<source ref="id8"/>
+			<target ref="id7"/>
 			<label kind="assignment" x="-390" y="-238">initialize()</label>
 		</transition>
 	</template>
@@ -272,7 +226,7 @@ void updateQueues () {
 gantt {
   Task(i : int[0, N-1]): Process(i).Runnable -&gt; 1,
                    Process(i).Running -&gt; 2,
-                   Process(i).Completed -&gt; 0;
+                   Process(i).Idle -&gt; 3;
 }
 </system>
 	<queries>
