@@ -157,10 +157,7 @@ hasRunning = true</label>
 		<declaration>bool isRunQueuesEmpty() {
     return forall (i: static_rq_n) static_rq_len[i] == 0;
 }
-
-void updateQueues () {
-
-}</declaration>
+</declaration>
 		<location id="id4" x="-144" y="-442">
 			<name x="-154" y="-476">scheduled</name>
 			<label kind="invariant" x="-93" y="-450">t &lt;= TIME_SLICE</label>
