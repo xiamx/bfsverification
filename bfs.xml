@@ -5,7 +5,8 @@
 bool hasRunning = false;
 const int N = 2; //number of tasks
 typedef int [-1, N - 1] pid_t;
-const int RR_INTERVAL = 4;
+const int TIME_SLICE = 4;
+const int RR_INTERVAL = TIME_SLICE;
 clock t;
 bool initialized = false;
 
