@@ -219,9 +219,10 @@ void updateQueues () {
 	</template>
 	<system>system BFS, Process;
 gantt {
-  Task(i : int[0, N-1]): Process(i).Runnable -&gt; 1,
-                   Process(i).Running -&gt; 2,
-                   Process(i).Idle -&gt; 3;
+  Task(i : int[0, N-1]): Process(i).Added -&gt; 1,
+                   Process(i).Runnable -&gt; 2,
+                   Process(i).Running -&gt; 3,
+                   Process(i).Idle -&gt; 4;
 }
 </system>
 	<queries>
