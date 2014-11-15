@@ -26,7 +26,6 @@ typedef int [0, static_rq_count] realtime_t;
 
 typedef struct {
     pid_t pid;
-    bool ready;
     nice_t nice;
     bool realtime;
     realtime_t realtime_priority;
@@ -43,9 +42,9 @@ task_t normal_rq[N];
 int normal_rq_len[N];
 
 const task_t tasks[N] = {
-    { 0, false, 0, true, 0},
-    { 1, false, 0, true, 0},
-    { 2, false, 0, true, 0}
+    { 0, 0, true, 0},
+    { 1, 0, true, 0},
+    { 2, 0, false, 0}
 };
 
 
