@@ -3,7 +3,7 @@
 <nta>
 	<declaration>// Place global declarations here.
 bool hasRunning = false;
-const int N = 2; //number of tasks
+const int N = 3; //number of tasks
 typedef int [-1, N - 1] pid_t;
 const int TIME_SLICE = 4;
 const int RR_INTERVAL = TIME_SLICE;
@@ -28,10 +28,8 @@ typedef struct {
     pid_t pid;
     bool ready;
     nice_t nice;
-    int required_computation_time;
     bool realtime;
     realtime_t realtime_priority;
-    bool completed;
 } task_t; 
 
 // 2-D array of static runqueues
@@ -45,17 +43,13 @@ task_t normal_rq[N];
 int normal_rq_len[N];
 
 const task_t tasks[N] = {
-    { 0, false, 0, 1, true, 0, false}, // a non cpu intensive task
-    { 1, false, 0, 20, true, 0, false} // a cpu intensive task
-    //{ 2, false, 0, 32767, 0,  0,  true, 0} // a realtime task that can starve the system
+    { 0, false, 0, true, 0},
+    { 1, false, 0, true, 0},
+    { 2, false, 0, true, 0}
 };
 
 
 void add (task_t task){
-    if (task.completed) {
-        // if completed, reset
-        task.completed = false;
-    }
     // is it a realtime ?
     if (task.realtime) {
         int rqlen = static_rq_len[task.realtime_priority];
