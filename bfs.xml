@@ -10,6 +10,7 @@ const int RR_INTERVAL = 4;
 clock t;
 bool initialized = false;
 int[0, N] deadlined = 0;
+clock wait[N];
 
 chan runnable, run, timeout, done;
 urgent chan immediateRunnable;
@@ -95,8 +96,6 @@ void initialize() {
 		<declaration>// Place local declarations here.
 task_t task = tasks[p];
 
-clock wait;
-
 void updateRunQueues() {
     if (task.realtime) {
         // remove head of the corresponding static_runqueue
@@ -127,6 +126,7 @@ void updateRunQueues() {
 }
 
 bool isNextToRun() {
+    bool smallestDeadlinedIsMe;
     if (task.realtime) {
         int rqlen = static_rq_len[task.realtime_priority];
         return static_rq[task.realtime_priority][0].pid == task.pid;
@@ -140,7 +140,9 @@ bool isNextToRun() {
                 idx_of_smallestDeadline = i;
             }
         }
-        return idx_of_smallestDeadline == task.pid;
+        smallestDeadlinedIsMe = idx_of_smallestDeadline == task.pid;
+
+        return smallestDeadlinedIsMe;
     }
 }
 
@@ -175,7 +177,7 @@ bool isNextToRun() {
 		<transition>
 			<source ref="id1"/>
 			<target ref="id0"/>
-			<label kind="guard" x="-390" y="-119">wait &gt; getRRInterval(task.nice)</label>
+			<label kind="guard" x="-391" y="-119">wait[p] &gt; getRRInterval(task.nice)</label>
 			<label kind="assignment" x="-390" y="-85">deadlined++</label>
 		</transition>
 		<transition>
@@ -188,14 +190,15 @@ bool isNextToRun() {
 			<source ref="id1"/>
 			<target ref="id3"/>
 			<label kind="guard" x="-25" y="-59">isNextToRun() &amp;&amp;
-!hasRunning &amp;&amp; deadlined == 0</label>
-			<label kind="synchronisation" x="-8" y="-17">runnable!</label>
+!hasRunning &amp;&amp; deadlined == 0
+&amp;&amp; forall(i: int[0, N-1]) (wait[i] &lt;= getRRInterval(tasks[i].nice))</label>
+			<label kind="synchronisation" x="-25" y="8">runnable!</label>
 		</transition>
 		<transition>
 			<source ref="id2"/>
 			<target ref="id4"/>
 			<label kind="synchronisation" x="178" y="8">timeout?</label>
-			<label kind="assignment" x="-16" y="204">wait = 0</label>
+			<label kind="assignment" x="-16" y="204">wait[p] = 0</label>
 			<nail x="170" y="204"/>
 			<nail x="169" y="-170"/>
 			<nail x="-8" y="-170"/>
