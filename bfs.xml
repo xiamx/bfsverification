@@ -147,14 +147,14 @@ bool isNextToRun() {
 
 
 </declaration>
-		<location id="id0" x="-408" y="-102">
-			<name x="-418" y="-136">DeadlinePassed</name>
+		<location id="id0" x="-408" y="-68">
+			<name x="-418" y="-102">DeadlinePassed</name>
 		</location>
 		<location id="id1" x="-34" y="-68">
 			<name x="-44" y="-102">Added</name>
 		</location>
 		<location id="id2" x="-34" y="204">
-			<name x="-34" y="221">Running</name>
+			<name x="-85" y="221">Running</name>
 		</location>
 		<location id="id3" x="-34" y="68">
 			<name x="-8" y="60">Runnable</name>
@@ -167,20 +167,20 @@ bool isNextToRun() {
 			<label kind="synchronisation" x="-16" y="187">timeout?</label>
 			<label kind="assignment" x="-16" y="204">wait[p] = 0,
 add(tasks[p])</label>
-			<nail x="280" y="204"/>
-			<nail x="272" y="-68"/>
+			<nail x="340" y="204"/>
+			<nail x="340" y="-68"/>
 		</transition>
 		<transition>
 			<source ref="id0"/>
 			<target ref="id3"/>
 			<label kind="guard" x="-390" y="38">!hasRunning</label>
-			<label kind="synchronisation" x="-390" y="55">immediateRunnable!</label>
-			<nail x="-408" y="76"/>
+			<label kind="synchronisation" x="-391" y="76">immediateRunnable!</label>
+			<nail x="-408" y="68"/>
 		</transition>
 		<transition>
 			<source ref="id1"/>
 			<target ref="id0"/>
-			<label kind="guard" x="-391" y="-119">wait[p] &gt; getRRInterval(task.nice)</label>
+			<label kind="guard" x="-314" y="-68">wait[p] &gt; getRRInterval(task.nice)</label>
 		</transition>
 		<transition>
 			<source ref="id1"/>
@@ -206,16 +206,16 @@ hasRunning = true</label>
     return staticrqempty &amp;&amp; normalrqempty;
 }
 </declaration>
-		<location id="id4" x="-144" y="-442">
-			<name x="-154" y="-476">scheduled</name>
-			<label kind="invariant" x="-127" y="-459">t &lt;= TIME_SLICE</label>
+		<location id="id4" x="-306" y="-476">
+			<name x="-316" y="-510">scheduled</name>
+			<label kind="invariant" x="-433" y="-493">t &lt;= TIME_SLICE</label>
 		</location>
-		<location id="id5" x="51" y="-238">
-			<name x="41" y="-272">schedulable</name>
+		<location id="id5" x="153" y="-476">
+			<name x="143" y="-510">schedulable</name>
 			<committed/>
 		</location>
-		<location id="id6" x="-178" y="-17">
-			<name x="-229" y="0">runQueueEmpty</name>
+		<location id="id6" x="34" y="-195">
+			<name x="-17" y="-178">runQueueEmpty</name>
 			<committed/>
 		</location>
 		<location id="id7" x="-306" y="-238">
@@ -230,44 +230,44 @@ hasRunning = true</label>
 		<transition>
 			<source ref="id7"/>
 			<target ref="id5"/>
-			<label kind="guard" x="-221" y="-204">!isRunQueuesEmpty()</label>
-			<label kind="synchronisation" x="-221" y="-187">immediateRunnable?</label>
-			<nail x="-136" y="-144"/>
+			<label kind="guard" x="-110" y="-289">!isRunQueuesEmpty()</label>
+			<label kind="synchronisation" x="-102" y="-306">immediateRunnable?</label>
+			<nail x="-34" y="-314"/>
 		</transition>
 		<transition>
 			<source ref="id6"/>
 			<target ref="id5"/>
-			<label kind="synchronisation" x="-68" y="-42">immediateRunnable?</label>
-			<nail x="17" y="-51"/>
+			<label kind="synchronisation" x="102" y="-221">immediateRunnable?</label>
+			<nail x="152" y="-195"/>
 		</transition>
 		<transition>
 			<source ref="id4"/>
 			<target ref="id7"/>
-			<label kind="guard" x="-280" y="-425">t == TIME_SLICE</label>
-			<label kind="synchronisation" x="-280" y="-374">timeout!</label>
-			<label kind="assignment" x="-280" y="-399">hasRunning = false</label>
+			<label kind="guard" x="-416" y="-399">t == TIME_SLICE</label>
+			<label kind="synchronisation" x="-365" y="-374">timeout!</label>
+			<label kind="assignment" x="-433" y="-348">hasRunning = false</label>
 		</transition>
 		<transition>
 			<source ref="id5"/>
 			<target ref="id4"/>
-			<label kind="synchronisation" x="-59" y="-382">run!</label>
-			<label kind="assignment" x="-25" y="-382">t = 0</label>
+			<label kind="synchronisation" x="-170" y="-510">run!</label>
+			<label kind="assignment" x="-127" y="-510">t = 0</label>
 		</transition>
 		<transition>
 			<source ref="id6"/>
 			<target ref="id5"/>
-			<label kind="synchronisation" x="-127" y="-136">runnable?</label>
+			<label kind="synchronisation" x="59" y="-297">runnable?</label>
 		</transition>
 		<transition>
 			<source ref="id7"/>
 			<target ref="id5"/>
-			<label kind="guard" x="-221" y="-238">!isRunQueuesEmpty()</label>
-			<label kind="synchronisation" x="-178" y="-255">runnable?</label>
+			<label kind="guard" x="-119" y="-442">!isRunQueuesEmpty()</label>
+			<label kind="synchronisation" x="-76" y="-416">runnable?</label>
 		</transition>
 		<transition>
 			<source ref="id7"/>
 			<target ref="id6"/>
-			<label kind="guard" x="-365" y="-144">isRunQueuesEmpty()</label>
+			<label kind="guard" x="-187" y="-204">isRunQueuesEmpty()</label>
 		</transition>
 		<transition>
 			<source ref="id8"/>
@@ -286,9 +286,39 @@ gantt {
 </system>
 	<queries>
 		<query>
+			<formula>A&lt;&gt; Process(0).Running
+			</formula>
+			<comment>P0 will eventually run
+			</comment>
+		</query>
+		<query>
+			<formula>A&lt;&gt; Process(1).Running
+			</formula>
+			<comment>P1 will eventually run
+			</comment>
+		</query>
+		<query>
 			<formula>A&lt;&gt; Process(2).Running
 			</formula>
 			<comment>P2 will eventually run
+			</comment>
+		</query>
+		<query>
+			<formula>Process(0).Added --&gt; Process(0).Running
+			</formula>
+			<comment>Always if P0 is added, it will evetually run
+			</comment>
+		</query>
+		<query>
+			<formula>Process(1).Added --&gt; Process(1).Running
+			</formula>
+			<comment>Always if P1 is added, it will evetually run
+			</comment>
+		</query>
+		<query>
+			<formula>Process(2).Added --&gt; Process(2).Running
+			</formula>
+			<comment>Always if P2 is added, it will evetually run
 			</comment>
 		</query>
 		<query>
