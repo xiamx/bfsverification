@@ -6,11 +6,13 @@ bool hasRunning = false;
 const int N = 3; //number of tasks
 typedef int [-1, N - 1] pid_t;
 const int TIME_SLICE = 4;
-const int RR_INTERVAL = 8;
+const int RR_INTERVAL = 4;
 clock t;
 bool initialized = false;
+int[0, N] deadlined = 0;
 
 chan runnable, run, timeout, done;
+urgent chan immediateRunnable;
 
 /* number of static REALTIME runqueues. BFS has this at 100.
  * for simulation purposes, we set it to be small.
@@ -56,7 +58,7 @@ int getRRInterval(int[-1,1] nice) {
     } else if (nice == 0) {
         return RR_INTERVAL;
     } else {
-        return RR_INTERVAL*2;
+        return RR_INTERVAL*4;
     }
 }
 
@@ -144,58 +146,74 @@ bool isNextToRun() {
 
 
 </declaration>
-		<location id="id0" x="-34" y="-68">
+		<location id="id0" x="-408" y="-102">
+			<name x="-418" y="-136">DeadlinePassed</name>
+		</location>
+		<location id="id1" x="-34" y="-68">
 			<name x="-44" y="-102">Added</name>
 		</location>
-		<location id="id1" x="-34" y="204">
+		<location id="id2" x="-34" y="204">
 			<name x="-34" y="221">Running</name>
 		</location>
-		<location id="id2" x="-34" y="68">
+		<location id="id3" x="-34" y="68">
 			<name x="-8" y="60">Runnable</name>
 			<committed/>
 		</location>
-		<location id="id3" x="-34" y="-170">
+		<location id="id4" x="-34" y="-170">
 			<name x="-44" y="-204">Idle</name>
 			<committed/>
 		</location>
-		<init ref="id0"/>
+		<init ref="id1"/>
 		<transition>
 			<source ref="id0"/>
-			<target ref="id2"/>
-			<label kind="guard" x="-314" y="-51">wait &gt;= getRRInterval(task.nice)
-&amp;&amp; !hasRunning &amp;&amp; !isNextToRun()</label>
-			<label kind="synchronisation" x="-314" y="0">runnable!</label>
-			<nail x="-170" y="-68"/>
-			<nail x="-170" y="68"/>
+			<target ref="id3"/>
+			<label kind="guard" x="-390" y="38">!hasRunning</label>
+			<label kind="synchronisation" x="-390" y="55">immediateRunnable!</label>
+			<label kind="assignment" x="-390" y="72">deadlined--</label>
+			<nail x="-408" y="76"/>
 		</transition>
 		<transition>
-			<source ref="id3"/>
+			<source ref="id1"/>
 			<target ref="id0"/>
-			<label kind="guard" x="-127" y="-127">initialized</label>
-			<label kind="assignment" x="-17" y="-119">add(tasks[p]), wait = 0</label>
-		</transition>
-		<transition>
-			<source ref="id0"/>
-			<target ref="id2"/>
-			<label kind="guard" x="-25" y="-59">isNextToRun() &amp;&amp;
-!hasRunning</label>
-			<label kind="synchronisation" x="-8" y="-17">runnable!</label>
+			<label kind="guard" x="-390" y="-119">wait &gt; getRRInterval(task.nice)</label>
+			<label kind="assignment" x="-390" y="-85">deadlined++</label>
 		</transition>
 		<transition>
 			<source ref="id1"/>
 			<target ref="id3"/>
+			<label kind="guard" x="-314" y="-51">wait &gt;= getRRInterval(task.nice)
+&amp;&amp; !hasRunning &amp;&amp; !isNextToRun()</label>
+			<nail x="-170" y="-68"/>
+			<nail x="-170" y="68"/>
+		</transition>
+		<transition>
+			<source ref="id4"/>
+			<target ref="id1"/>
+			<label kind="guard" x="-127" y="-127">initialized</label>
+			<label kind="assignment" x="-17" y="-119">add(tasks[p])</label>
+		</transition>
+		<transition>
+			<source ref="id1"/>
+			<target ref="id3"/>
+			<label kind="guard" x="-25" y="-59">isNextToRun() &amp;&amp;
+!hasRunning &amp;&amp; deadlined == 0</label>
+			<label kind="synchronisation" x="-8" y="-17">runnable!</label>
+		</transition>
+		<transition>
+			<source ref="id2"/>
+			<target ref="id4"/>
 			<label kind="synchronisation" x="178" y="8">timeout?</label>
+			<label kind="assignment" x="-16" y="204">wait = 0</label>
 			<nail x="170" y="204"/>
 			<nail x="169" y="-170"/>
 			<nail x="-8" y="-170"/>
 		</transition>
 		<transition>
-			<source ref="id2"/>
-			<target ref="id1"/>
+			<source ref="id3"/>
+			<target ref="id2"/>
 			<label kind="synchronisation" x="-25" y="102">run?</label>
 			<label kind="assignment" x="-25" y="119">updateRunQueues(),
-hasRunning = true,
- wait =0</label>
+hasRunning = true</label>
 		</transition>
 	</template>
 	<template>
@@ -204,59 +222,65 @@ hasRunning = true,
     return forall (i: static_rq_n) static_rq_len[i] == 0;
 }
 </declaration>
-		<location id="id4" x="-144" y="-442">
+		<location id="id5" x="-144" y="-442">
 			<name x="-154" y="-476">scheduled</name>
 			<label kind="invariant" x="-93" y="-450">t &lt;= TIME_SLICE</label>
 		</location>
-		<location id="id5" x="51" y="-238">
+		<location id="id6" x="51" y="-238">
 			<name x="41" y="-272">schedulable</name>
 			<committed/>
 		</location>
-		<location id="id6" x="-178" y="-17">
+		<location id="id7" x="-178" y="-17">
 			<name x="-229" y="0">runQueueEmpty</name>
 			<committed/>
 		</location>
-		<location id="id7" x="-306" y="-238">
+		<location id="id8" x="-306" y="-238">
 			<name x="-316" y="-272">idle</name>
 			<committed/>
 		</location>
-		<location id="id8" x="-408" y="-238">
+		<location id="id9" x="-408" y="-238">
 			<name x="-418" y="-272">Init</name>
 			<committed/>
 		</location>
-		<init ref="id8"/>
+		<init ref="id9"/>
 		<transition>
-			<source ref="id4"/>
-			<target ref="id7"/>
+			<source ref="id7"/>
+			<target ref="id6"/>
+			<label kind="synchronisation" x="-160" y="-51">immediateRunnable?</label>
+			<nail x="17" y="-51"/>
+		</transition>
+		<transition>
+			<source ref="id5"/>
+			<target ref="id8"/>
 			<label kind="guard" x="-289" y="-374">t == TIME_SLICE</label>
 			<label kind="synchronisation" x="-221" y="-331">timeout!</label>
 			<label kind="assignment" x="-288" y="-340">hasRunning = false</label>
 		</transition>
 		<transition>
-			<source ref="id5"/>
-			<target ref="id4"/>
+			<source ref="id6"/>
+			<target ref="id5"/>
 			<label kind="synchronisation" x="-59" y="-382">run!</label>
 			<label kind="assignment" x="-126" y="-340">t = 0</label>
 		</transition>
 		<transition>
-			<source ref="id6"/>
-			<target ref="id5"/>
+			<source ref="id7"/>
+			<target ref="id6"/>
 			<label kind="synchronisation" x="-85" y="-102">runnable?</label>
 		</transition>
 		<transition>
-			<source ref="id7"/>
-			<target ref="id5"/>
+			<source ref="id8"/>
+			<target ref="id6"/>
 			<label kind="guard" x="-221" y="-238">!isRunQueuesEmpty()</label>
 			<label kind="synchronisation" x="-288" y="-255">runnable?</label>
 		</transition>
 		<transition>
-			<source ref="id7"/>
-			<target ref="id6"/>
+			<source ref="id8"/>
+			<target ref="id7"/>
 			<label kind="guard" x="-408" y="-161">isRunQueuesEmpty()</label>
 		</transition>
 		<transition>
-			<source ref="id8"/>
-			<target ref="id7"/>
+			<source ref="id9"/>
+			<target ref="id8"/>
 			<label kind="assignment" x="-390" y="-238">initialize()</label>
 		</transition>
 	</template>
@@ -264,21 +288,34 @@ hasRunning = true,
 gantt {
   Task(i : int[0, N-1]): Process(i).Added -&gt; 1,
                    Process(i).Runnable -&gt; 2,
+                   Process(i).DeadlinePassed -&gt; 5,
                    Process(i).Running -&gt; 3,
                    Process(i).Idle -&gt; 4;
 }
 </system>
 	<queries>
 		<query>
+			<formula>A&lt;&gt; Process(2).Running
+			</formula>
+			<comment>P2 will eventually run
+			</comment>
+		</query>
+		<query>
+			<formula>Process(2).Running --&gt; Process(2).Idle
+			</formula>
+			<comment>Always when P2 is running, it will eventually become idle
+			</comment>
+		</query>
+		<query>
 			<formula>Process(1).Running --&gt; Process(1).Idle
 			</formula>
-			<comment>
+			<comment>Always when P1 is running, it will eventually become idle
 			</comment>
 		</query>
 		<query>
 			<formula>Process(0).Running --&gt; Process(0).Idle
 			</formula>
-			<comment>
+			<comment>Always when P0 is running, it will eventually become idle
 			</comment>
 		</query>
 		<query>
