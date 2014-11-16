@@ -6,7 +6,7 @@ bool hasRunning = false;
 const int N = 3; //number of tasks
 typedef int [-1, N - 1] pid_t;
 const int TIME_SLICE = 4;
-const int RR_INTERVAL = 16;
+const int RR_INTERVAL = 8;
 clock t;
 bool initialized = false;
 
@@ -19,6 +19,7 @@ const int static_rq_count = 1;
 typedef int [0, static_rq_count - 1] static_rq_n;
 const int static_rq_size = N;
 
+
 // nice level
 typedef int [-1, 1] nice_t;
 typedef int [0, static_rq_count] realtime_t;
@@ -29,6 +30,7 @@ typedef struct {
     nice_t nice;
     bool realtime;
     realtime_t realtime_priority;
+    int deadlineDelta;
 } task_t; 
 
 // 2-D array of static runqueues
@@ -39,62 +41,13 @@ int static_rq_len[static_rq_n];
 // normal runqueue
 task_t normal_rq[N];
 // record the length of the normal runqueue
-int normal_rq_len[N];
+int[0, N] normal_rq_len = 0;
 
 const task_t tasks[N] = {
-    { 0, 0, true, 0},
-    { 1, 0, true, 0},
-    { 2, 0, false, 0}
+    { 0, -1, false, 0, 0},
+    { 1, 1, false, 0, 0},
+    { 2, 1, false, 0, 0}
 };
-
-
-void add (task_t task){
-    // is it a realtime ?
-    if (task.realtime) {
-        int rqlen = static_rq_len[task.realtime_priority];
-        static_rq[task.realtime_priority][rqlen] = task;
-        static_rq_len[task.realtime_priority]++;
-    } else {
-        // then this must be a sched_normal
-
-    }
-}
-
-void initialize() {
-    for (i: static_rq_n) static_rq_len[i] = 0;
-    for (i: static_rq_n) for (j: int[0,N - 1]) static_rq[i][j].pid = -1;
-    for (i: int[0, N-1]) add(tasks[i]);
-    initialized = true;
-}
-</declaration>
-	<template>
-		<name x="5" y="5">Process</name>
-		<parameter>const int[0, N-1] p</parameter>
-		<declaration>// Place local declarations here.
-task_t task = tasks[p];
-
-void updateRunQueues() {
-    if (task.realtime) {
-        // remove head of the corresponding static_runqueue
-        pid_t i;
-        int rqlen = static_rq_len[task.realtime_priority];
-        for (i = 0; i&lt; rqlen - 1; i++) {
-            static_rq[task.realtime_priority][i] = static_rq[task.realtime_priority][i + 1];
-        }
-        static_rq[task.realtime_priority][rqlen - 1].pid = -1;
-        //decrease static_rq_len by 1
-        static_rq_len[task.realtime_priority]--;
-    }
-}
-
-bool isNextToRun() {
-    if (task.realtime) {
-        int rqlen = static_rq_len[task.realtime_priority];
-        return static_rq[task.realtime_priority][0].pid == task.pid;
-    } else {
-        return false;
-    }
-}
 
 // Given a nice level. Get the corresponding RR_interval
 int getRRInterval(int[-1,1] nice) {
@@ -107,15 +60,98 @@ int getRRInterval(int[-1,1] nice) {
     }
 }
 
+ 
+void add (task_t task){
+    // is it a realtime ?
+    if (task.realtime) {
+        int rqlen = static_rq_len[task.realtime_priority];
+        static_rq[task.realtime_priority][rqlen] = task;
+        static_rq_len[task.realtime_priority]++;
+    } else {
+        // then this must be a sched_normal
+        normal_rq[normal_rq_len] = task;
+        task.deadlineDelta = getRRInterval(task.nice);
+        normal_rq[normal_rq_len].deadlineDelta = getRRInterval(task.nice);
+        normal_rq_len++;
+
+    }
+}
+
+void initialize() {
+    for (i: static_rq_n) static_rq_len[i] = 0;
+    for (i: static_rq_n) for (j: int[0,N - 1]) static_rq[i][j].pid = -1;
+    for (i: int[0, N-1]) normal_rq[i].pid = -1;
+    for (i: int[0, N-1]) add(tasks[i]);
+    initialized = true;
+}
+
+
+</declaration>
+	<template>
+		<name x="5" y="5">Process</name>
+		<parameter>const int[0, N-1] p</parameter>
+		<declaration>// Place local declarations here.
+task_t task = tasks[p];
+
+clock wait;
+
+void updateRunQueues() {
+    if (task.realtime) {
+        // remove head of the corresponding static_runqueue
+        pid_t i;
+        int rqlen = static_rq_len[task.realtime_priority];
+        for (i = 0; i&lt; rqlen - 1; i++) {
+            static_rq[task.realtime_priority][i] = static_rq[task.realtime_priority][i + 1];
+        }
+        static_rq[task.realtime_priority][rqlen - 1].pid = -1;
+        //decrease static_rq_len by 1
+        static_rq_len[task.realtime_priority]--;
+    } else {
+        pid_t i;
+        pid_t myidx;
+        
+        for (i = 0; i&lt; N-1; i++) {
+            if (normal_rq[i].pid = p){
+                myidx = i;
+            }
+        }
+
+        for (i = myidx; i&lt; N-1; i++) {
+            normal_rq[i] = normal_rq[i+1];
+        }
+        normal_rq[normal_rq_len - 1].pid = -1;
+        normal_rq_len--;
+    }
+}
+
+bool isNextToRun() {
+    if (task.realtime) {
+        int rqlen = static_rq_len[task.realtime_priority];
+        return static_rq[task.realtime_priority][0].pid == task.pid;
+    } else {
+        pid_t i;
+        int smallestDeadline = 30000;
+        pid_t idx_of_smallestDeadline = -1;
+        for (i = 0; i&lt; N-1; i++) {
+            if (normal_rq[i].deadlineDelta &lt;= smallestDeadline) {
+                smallestDeadline = normal_rq[i].deadlineDelta;
+                idx_of_smallestDeadline = i;
+            }
+        }
+        return idx_of_smallestDeadline == task.pid;
+    }
+}
+
+
 </declaration>
 		<location id="id0" x="-34" y="-68">
 			<name x="-44" y="-102">Added</name>
 		</location>
-		<location id="id1" x="-42" y="119">
-			<name x="-42" y="136">Running</name>
+		<location id="id1" x="-34" y="204">
+			<name x="-34" y="221">Running</name>
 		</location>
-		<location id="id2" x="-127" y="17">
-			<name x="-101" y="9">Runnable</name>
+		<location id="id2" x="-34" y="68">
+			<name x="-8" y="60">Runnable</name>
 			<committed/>
 		</location>
 		<location id="id3" x="-34" y="-170">
@@ -124,32 +160,42 @@ int getRRInterval(int[-1,1] nice) {
 		</location>
 		<init ref="id0"/>
 		<transition>
+			<source ref="id0"/>
+			<target ref="id2"/>
+			<label kind="guard" x="-314" y="-51">wait &gt;= getRRInterval(task.nice)
+&amp;&amp; !hasRunning &amp;&amp; !isNextToRun()</label>
+			<label kind="synchronisation" x="-314" y="0">runnable!</label>
+			<nail x="-170" y="-68"/>
+			<nail x="-170" y="68"/>
+		</transition>
+		<transition>
 			<source ref="id3"/>
 			<target ref="id0"/>
 			<label kind="guard" x="-127" y="-127">initialized</label>
-			<label kind="assignment" x="-17" y="-119">add(tasks[p])</label>
+			<label kind="assignment" x="-17" y="-119">add(tasks[p]), wait = 0</label>
 		</transition>
 		<transition>
 			<source ref="id0"/>
 			<target ref="id2"/>
-			<label kind="guard" x="-170" y="-76">isNextToRun() &amp;&amp;
+			<label kind="guard" x="-25" y="-59">isNextToRun() &amp;&amp;
 !hasRunning</label>
-			<label kind="synchronisation" x="-161" y="-34">runnable!</label>
+			<label kind="synchronisation" x="-8" y="-17">runnable!</label>
 		</transition>
 		<transition>
 			<source ref="id1"/>
 			<target ref="id3"/>
 			<label kind="synchronisation" x="178" y="8">timeout?</label>
-			<nail x="169" y="119"/>
+			<nail x="170" y="204"/>
 			<nail x="169" y="-170"/>
 			<nail x="-8" y="-170"/>
 		</transition>
 		<transition>
 			<source ref="id2"/>
 			<target ref="id1"/>
-			<label kind="synchronisation" x="-25" y="25">run?</label>
-			<label kind="assignment" x="-25" y="42">updateRunQueues(),
-hasRunning = true</label>
+			<label kind="synchronisation" x="-25" y="102">run?</label>
+			<label kind="assignment" x="-25" y="119">updateRunQueues(),
+hasRunning = true,
+ wait =0</label>
 		</transition>
 	</template>
 	<template>
@@ -168,6 +214,7 @@ hasRunning = true</label>
 		</location>
 		<location id="id6" x="-178" y="-17">
 			<name x="-229" y="0">runQueueEmpty</name>
+			<committed/>
 		</location>
 		<location id="id7" x="-306" y="-238">
 			<name x="-316" y="-272">idle</name>
