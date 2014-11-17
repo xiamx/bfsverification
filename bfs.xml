@@ -6,7 +6,7 @@ bool hasRunning = false;
 const int N = 3; //number of tasks
 typedef int [-1, N - 1] pid_t;
 const int TIME_SLICE = 4;
-const int RR_INTERVAL = 4;
+const int RR_INTERVAL = 6;
 clock t;
 bool initialized = false;
 clock wait[N];
@@ -180,14 +180,14 @@ add(tasks[p])</label>
 		<transition>
 			<source ref="id1"/>
 			<target ref="id0"/>
-			<label kind="guard" x="-314" y="-68">wait[p] &gt; getRRInterval(task.nice)</label>
+			<label kind="guard" x="-314" y="-68">wait[p] &gt;= getRRInterval(task.nice)</label>
 		</transition>
 		<transition>
 			<source ref="id1"/>
 			<target ref="id3"/>
 			<label kind="guard" x="-25" y="-59">isNextToRun() &amp;&amp;
 !hasRunning &amp;&amp;
-forall(i: int[0, N-1]) (wait[i] &lt;= getRRInterval(tasks[i].nice))</label>
+forall(i: int[0, N-1]) (wait[i] &lt; getRRInterval(tasks[i].nice))</label>
 			<label kind="synchronisation" x="-25" y="8">runnable!</label>
 		</transition>
 		<transition>
