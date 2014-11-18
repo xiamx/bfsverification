@@ -3,7 +3,7 @@
 <nta>
 	<declaration>// Place global declarations here.
 bool hasRunning = false;
-const int N = 3; //number of tasks
+const int N = 4; //number of tasks
 typedef int [-1, N - 1] pid_t;
 const int TIME_SLICE = 4;
 const int RR_INTERVAL = 10;
@@ -46,8 +46,9 @@ int[0, N] normal_rq_len = 0;
 
 const task_t tasks[N] = {
     { 0, -1, false, 0},
-    { 1, 1, false, 0},
-    { 2, 1, false, 0}
+    { 1, 0, false, 0},
+    { 2, 1, false, 0},
+    { 3, 0, false, 0}
 };
 
 // Given a nice level. Get the corresponding RR_interval
@@ -172,7 +173,7 @@ add(tasks[p])</label>
 			<source ref="id1"/>
 			<target ref="id3"/>
 			<label kind="guard" x="-25" y="-59">isNextToRun() &amp;&amp; 
-forall(i: int[0, N-1]) (getRRInterval(tasks[i].nice) &gt;= getRRInterval(tasks[p].nice)) &amp;&amp;
+forall(i: int[0, N-1]) (getRRInterval(tasks[i].nice)-  getRRInterval(tasks[p].nice) &gt;= wait[i] - wait[p]) &amp;&amp;
 !hasRunning&amp;&amp;
 forall(i: int[0, N-1]) (wait[i] &lt; getRRInterval(tasks[i].nice))</label>
 			<label kind="synchronisation" x="-25" y="17">runnable!</label>
@@ -275,7 +276,7 @@ gantt {
 		<query>
 			<formula>A&lt;&gt; Process(0).Running
 			</formula>
-			<comment>P0 will eventually run
+			<comment>P0 will always eventually run
 			</comment>
 		</query>
 		<query>
