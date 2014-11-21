@@ -1,0 +1,59 @@
+uppaal-4.1.19/bin-Linux/verifyta  bfsverification/bfs.xml 
+Options for the verification:
+  Generating no trace
+  Search order is breadth first
+  Using conservative space optimisation
+  Seed is 1416283476
+  State space representation uses minimal constraint systems
+
+
+ -- Formula is satisfied.
+
+Verifying formula 4: Process(0).Added --> Process(0).Running
+
+ -- Formula is satisfied.
+
+Verifying formula 5: Process(1).Added --> Process(1).Running
+
+ -- Formula is satisfied.
+
+Verifying formula 6: Process(2).Added --> Process(2).Running
+
+ -- Formula is satisfied.
+
+Verifying formula 6: Process(3).Added --> Process(3).Running
+
+ -- Formula is satisfied.
+
+Verifying formula 7: Process(3).Running --> Process(3).Added
+
+ -- Formula is satisfied.
+
+Verifying formula 7: Process(2).Running --> Process(2).Added
+
+ -- Formula is satisfied.
+
+Verifying formula 8: Process(1).Running --> Process(1).Added
+
+ -- Formula is satisfied.
+
+Verifying formula 9: Process(0).Running --> Process(0).Added
+
+ -- Formula is satisfied.
+
+Verifying formula 10: A[] forall(i: int[0, N-1]) forall(j: int[0, N-1]) Process(i).Running && Process(j).Running imply i == j
+
+ -- Formula is satisfied.
+
+Verifying formula 11: sup: wait[0],wait[1],wait[2],wait[3]
+
+ -- Formula is satisfied.
+sup{true}:
+wait[0] <= 16
+wait[1] <= 20
+wait[2] <= 51
+wait[3] <= 20
+
+Verifying formula 12: A[] not deadlock
+
+ -- Formula is satisfied.
